@@ -25,15 +25,17 @@ This project is a demo for the Melita interview process, it's main purpose is to
 ```
 order-processing-service/
 ├── src/main/java/com/melita/orderprocessing
-│   ├── config/
-│   ├── controller/
-│   ├── service/
-│   ├── repository/
-│   ├── model/
-│   ├── event/
-│   ├── security/
-│   ├── exception/
-│   ├── util/
+│   │   ├── config/
+│   │   ├── controller/
+│   │   ├── event/
+│   │   ├── exception/
+│   │   ├── model/
+│   │   ├── repository/
+│   │   ├── security/
+│   │   ├── service/
+│   │   ├── util/
+│   ├── resources/
+│       ├── application.yml/
 ├── src/test/java/com/melita/orderprocessing
 ```
 ## Installation
