@@ -1,4 +1,4 @@
-package com.melita.OrderProcessingService.event;
+package com.melita.OrderProcessingService.event.model;
 
 import lombok.AllArgsConstructor;
 import lombok.Data;

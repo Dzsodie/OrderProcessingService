@@ -1,6 +1,5 @@
 package com.melita.OrderProcessingService.security;
 
-import com.melita.OrderProcessingService.config.SecurityConfig;
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.ExpiredJwtException;
 import io.jsonwebtoken.JwtException;
@@ -13,6 +12,8 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
 
@@ -22,7 +23,14 @@ import java.nio.charset.StandardCharsets;
 @Component
 public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
+    private final String secret;
+
     private static final Logger logger = LoggerFactory.getLogger(JwtAuthenticationFilter.class);
+
+    @Autowired
+    public JwtAuthenticationFilter(@Value("${jwt.secret}") String secret) {
+        this.secret = secret;
+    }
 
     @Override
     public void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain chain)
@@ -38,7 +46,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
         token = token.substring(7);
         try {
             Claims claims = Jwts.parserBuilder()
-                    .setSigningKey(Keys.hmacShaKeyFor(SecurityConfig.getSecret().getBytes(StandardCharsets.UTF_8)))
+                    .setSigningKey(Keys.hmacShaKeyFor(secret.getBytes(StandardCharsets.UTF_8)))
                     .build()
                     .parseClaimsJws(token)
                     .getBody();
@@ -69,7 +77,6 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
             response.sendError(HttpServletResponse.SC_INTERNAL_SERVER_ERROR, "Token validation error");
             return;
         }
-
         chain.doFilter(request, response);
     }
 }
