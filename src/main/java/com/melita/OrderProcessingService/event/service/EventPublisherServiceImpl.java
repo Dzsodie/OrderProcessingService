@@ -12,7 +12,8 @@ import org.springframework.stereotype.Service;
 @Slf4j
 @RequiredArgsConstructor
 @Service
-public class EventPublisherServiceServiceImpl implements EventPublisherService {
+public class EventPublisherServiceImpl implements EventPublisherService {
+
     private final RabbitTemplate rabbitTemplate;
 
     @Value("${rabbitmq.exchange.name}")

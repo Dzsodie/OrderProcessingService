@@ -1,7 +1,6 @@
 package com.melita.OrderProcessingService;
 
-import com.melita.OrderProcessingService.event.model.NotificationEvent;
-import com.melita.OrderProcessingService.event.model.OrderApprovedEvent;
+import com.melita.OrderProcessingService.event.service.EventPublisherService;
 import com.melita.OrderProcessingService.exception.OrderNotFoundException;
 import com.melita.OrderProcessingService.model.Order;
 import com.melita.OrderProcessingService.model.OrderStatus;
@@ -12,9 +11,8 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
+import org.mockito.Mockito;
 import org.mockito.junit.jupiter.MockitoExtension;
-import org.springframework.amqp.rabbit.core.RabbitTemplate;
-import org.springframework.beans.factory.annotation.Value;
 
 import java.util.Optional;
 
@@ -28,19 +26,10 @@ class OrderProcessingServiceImplTest {
     private OrderRepository orderRepository;
 
     @Mock
-    private RabbitTemplate rabbitTemplate;
+    private EventPublisherService eventPublisherService;
 
     @InjectMocks
     private OrderProcessingServiceImpl orderProcessingServiceImpl;
-
-    @Value("${rabbitmq.exchange.name}")
-    private String exchangeName;
-
-    @Value("${rabbitmq.routing.order.approved}")
-    private String orderApprovedRoutingKey;
-
-    @Value("${rabbitmq.routing.notification}")
-    private String notificationRoutingKey;
 
     private Order order;
 
@@ -65,12 +54,8 @@ class OrderProcessingServiceImplTest {
         // Then
         assertEquals(OrderStatus.APPROVED, order.getStatus());
         verify(orderRepository, times(1)).save(order);
-        verify(rabbitTemplate, times(1)).convertAndSend(exchangeName, orderApprovedRoutingKey, new OrderApprovedEvent(order));
-        verify(rabbitTemplate, times(1)).convertAndSend(exchangeName, notificationRoutingKey, new NotificationEvent(
-                order.getCustomerEmail(),
-                "Order Approved",
-                "Dear " + order.getCustomerName() + ", your order has been approved."
-        ));
+        verify(eventPublisherService, times(1)).publishOrderApprovedEvent(order);
+        verify(eventPublisherService, times(1)).publishNotificationEvent(order);
     }
 
     @Test
@@ -103,41 +88,44 @@ class OrderProcessingServiceImplTest {
     void approveOrder_DoesNothingWhenOrderAlreadyApproved() {
         // Given
         order.setStatus(OrderStatus.APPROVED);
-        when(orderRepository.findById(1L)).thenReturn(Optional.of(order));
+        lenient().when(orderRepository.findById(1L)).thenReturn(Optional.of(order));
 
         // When
         orderProcessingServiceImpl.approveOrder(order);
 
         // Then
         verify(orderRepository, never()).save(any());
-        verify(rabbitTemplate, never()).convertAndSend(Optional.ofNullable(any()), any(), any());
+        verify(eventPublisherService, never()).publishOrderApprovedEvent(any());
+        verify(eventPublisherService, never()).publishNotificationEvent(any());
     }
 
     @Test
     void approveOrder_DoesNothingWhenOrderRejected() {
         // Given
         order.setStatus(OrderStatus.REJECTED);
-        when(orderRepository.findById(1L)).thenReturn(Optional.of(order));
+        lenient().when(orderRepository.findById(1L)).thenReturn(Optional.of(order));
 
         // When
         orderProcessingServiceImpl.approveOrder(order);
 
         // Then
         verify(orderRepository, never()).save(any());
-        verify(rabbitTemplate, never()).convertAndSend(Optional.ofNullable(any()), any(), any());
+        verify(eventPublisherService, never()).publishOrderApprovedEvent(any());
+        verify(eventPublisherService, never()).publishNotificationEvent(any());
     }
 
     @Test
     void approveOrder_DoesNothingWhenOrderCompleted() {
         // Given
         order.setStatus(OrderStatus.COMPLETED);
-        when(orderRepository.findById(1L)).thenReturn(Optional.of(order));
+        lenient().when(orderRepository.findById(1L)).thenReturn(Optional.of(order));
 
         // When
         orderProcessingServiceImpl.approveOrder(order);
 
         // Then
         verify(orderRepository, never()).save(any());
-        verify(rabbitTemplate, never()).convertAndSend(Optional.ofNullable(any()), any(), any());
+        verify(eventPublisherService, never()).publishOrderApprovedEvent(any());
+        verify(eventPublisherService, never()).publishNotificationEvent(any());
     }
 }
